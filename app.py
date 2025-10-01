@@ -6,9 +6,16 @@ import io
 
 app = Flask(__name__)
 
-# Cargar modelos
-model_bin = tf.keras.models.load_model('modelo_binario.h5')
-model_cls = tf.keras.models.load_model('modelo_razas.h5')
+# Cargar modelos con manejo de errores
+try:
+    print("🚀 Cargando modelos...")
+    model_bin = tf.keras.models.load_model('modelo_binario.h5')
+    model_cls = tf.keras.models.load_model('modelo_razas.h5')
+    print("✅ Modelos cargados exitosamente!")
+    models_loaded = True
+except Exception as e:
+    print(f"❌ Error cargando modelos: {e}")
+    models_loaded = False
 
 label_names = ["Abyssinian", "American Bulldog", "American Pit Bull Terrier", "Basset Hound", "Beagle", "Bengal", "Birman", "Bombay", "Boxer", "British Shorthair", "Chihuahua", "Egyptian Mau", "English Cocker Spaniel", "English Setter", "German Shorthaired", "Great Pyrenees", "Havanese", "Japanese Chin", "Keeshond", "Leonberger", "Maine Coon", "Miniature Pinscher", "Newfoundland", "Persian", "Pomeranian", "Pug", "Ragdoll", "Russian Blue", "Saint Bernard", "Samoyed", "Scottish Terrier", "Shiba Inu", "Siamese", "Sphynx", "Staffordshire Bull Terrier", "Wheaten Terrier", "Yorkshire Terrier"]
 
@@ -22,10 +29,15 @@ def preprocess_image(image_bytes):
 
 @app.route('/')
 def home():
-    return 'Dog Classifier API - Usa /classify'
+    if not models_loaded:
+        return "❌ Error: Modelos no cargados. Verifica la compatibilidad de versiones."
+    return "Dog Classifier API - Usa /classify"
 
 @app.route('/classify', methods=['POST'])
 def classify():
+    if not models_loaded:
+        return jsonify({'error': 'Modelos no cargados'}), 500
+        
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'No image'}), 400
